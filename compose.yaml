@@ -1,0 +1,48 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: pfk-workspace-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pfkuser
+      POSTGRES_PASSWORD: pfkpassword
+      POSTGRES_DB: pfk_workspace
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pfkuser"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    networks:
+      - pfk_workspace_networks
+
+  redis:
+    image: redis:7
+    container_name: pfk-workspace-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: ["redis-server", "--save","60","1","--loglevel","warning"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - pfk_workspace_networks
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  pfk_workspace_networks:
+    driver: bridge

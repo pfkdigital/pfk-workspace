@@ -2,64 +2,78 @@ package com.example.pfkworkspace.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Configuration
 public class JwtUtility {
-    @Value("${security.jwt.secret.key}")
-    private String secretKey;
 
-    @Value("${security.jwt.expiration.ms}")
-    private Long accessTokenExpirationMs;
+  @Value("${jwt.secret.key}")
+  private String secretKey;
 
-    @Value("${security.jwt.refresh.expiration.ms}")
-    private Long refreshTokenExpirationMs;
+  @Value("${jwt.expiration.access-token}")
+  private Long accessTokenExpirationMs;
 
-    public String extractUsername(String token) {
-        return extractAllClaims(token).getSubject();
-    }
+  @Value("${jwt.expiration.refresh-token}")
+  private Long refreshTokenExpirationMs;
 
-    public Date extractExpiration(String token) {
-        return extractAllClaims(token).getExpiration();
-    }
+  public String extractUsername(String token) {
+    return extractAllClaims(token).getSubject();
+  }
 
-    public boolean isTokenExpired(String token) {
-        return extractExpiration(token).after(new Date(System.currentTimeMillis()));
-    }
+  public Date extractExpiration(String token) {
+    return extractAllClaims(token).getExpiration();
+  }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
+  public boolean isTokenExpired(String token) {
+    return extractExpiration(token).before(new Date());
+  }
 
-    public String generateAccessToken(UserDetails userDetails) {
-        return buildToken(userDetails, accessTokenExpirationMs, Map.of());
-    }
+  public boolean isTokenValid(String token, UserDetails userDetails) {
+    String username = extractUsername(token);
+    return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+  }
 
-    public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(userDetails, refreshTokenExpirationMs, Map.of());
-    }
+  public String generateAccessToken(UserDetails userDetails) {
+    return buildToken(userDetails, accessTokenExpirationMs);
+  }
 
-    private SecretKey getSecretKey() {
-        return Keys.hmacShaKeyFor(secretKey.getBytes());
-    }
+  public String generateRefreshToken(UserDetails userDetails) {
+    return buildToken(userDetails, refreshTokenExpirationMs);
+  }
 
-    private Claims extractAllClaims(String token) {
-        return (Claims) Jwts.parser().decryptWith(getSecretKey()).build().parse(token).getPayload();
-    }
+  private String buildToken(UserDetails userDetails, Long expirationMs) {
 
-    private String buildToken(UserDetails userDetails, Long expirationMs, Map<String, Object> claims) {
-        return Jwts.builder().claims(claims).claim("authorities", userDetails.getAuthorities())
-                .subject(userDetails.getUsername())
-                .signWith(getSecretKey())
-                .expiration(new java.util.Date(System.currentTimeMillis() + expirationMs))
-                .compact();
-    }
+    Map<String, Object> claims =
+        Map.of(
+            "roles",
+            userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+
+    return Jwts.builder()
+        .claims(claims)
+        .subject(userDetails.getUsername())
+        .expiration(new Date(System.currentTimeMillis() + expirationMs))
+        .signWith(getSecretKey())
+        .compact();
+  }
+
+  private SecretKey getSecretKey() {
+    byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+    return Keys.hmacShaKeyFor(keyBytes);
+  }
+
+  private Claims extractAllClaims(String token) {
+    return Jwts.parser().verifyWith(getSecretKey()).build().parseSignedClaims(token).getPayload();
+  }
 }

@@ -3,6 +3,7 @@ package com.example.pfkworkspace.exception;
 import com.example.pfkworkspace.dto.response.ApiError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -37,6 +38,18 @@ public class AuthControllerAdvise {
 
   @ExceptionHandler(UserNotFoundException.class)
   public ResponseEntity<ApiError> handleUserNotFoundException() {
+    ApiError apiError =
+        ApiError.builder()
+            .message("User not found")
+            .status(HttpStatus.NOT_FOUND)
+            .timestamp(LocalDateTime.now())
+            .build();
+
+    return new ResponseEntity<>(apiError, HttpStatus.NOT_FOUND);
+  }
+
+  @ExceptionHandler(UsernameNotFoundException.class)
+  public ResponseEntity<ApiError> handleUsernameNotFoundException() {
     ApiError apiError =
         ApiError.builder()
             .message("User not found")

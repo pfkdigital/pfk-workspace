@@ -1,5 +1,6 @@
-package com.example.pfkworkspace.security;
+package com.example.pfkworkspace.utility;
 
+import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
@@ -30,5 +31,15 @@ public class CookieUtility {
         .path("/")
         .sameSite("None")
         .build();
+  }
+
+  public void clearCookies(Cookie[] cookies) {
+    for (Cookie cookie : cookies) {
+      if (cookie.getName().equals("access_token") || cookie.getName().equals("refresh_token")) {
+        cookie.setValue("");
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+      }
+    }
   }
 }

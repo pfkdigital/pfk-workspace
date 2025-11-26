@@ -8,7 +8,7 @@ import com.example.pfkworkspace.dto.response.RegistrationResponseDto;
 import com.example.pfkworkspace.entity.User;
 import com.example.pfkworkspace.enums.Roles;
 import com.example.pfkworkspace.exception.*;
-import com.example.pfkworkspace.security.CookieUtility;
+import com.example.pfkworkspace.utility.CookieUtility;
 import com.example.pfkworkspace.security.JwtUtility;
 import com.example.pfkworkspace.service.AuthService;
 import com.example.pfkworkspace.repository.UserRepository;
@@ -19,7 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -51,7 +55,7 @@ public class AuthServiceImpl implements AuthService {
             .firstName(registerRequestDto.getFirstName())
             .lastName(registerRequestDto.getLastName())
             .username(registerRequestDto.getUsername())
-            .passwordHash(passwordEncoder.encode(registerRequestDto.getPassword()))
+            .password(passwordEncoder.encode(registerRequestDto.getPassword()))
             .emailAddress(registerRequestDto.getEmailAddress())
             .role(Roles.ROLE_USER)
             .isEnabled(true)
@@ -67,34 +71,32 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public AuthenticationResponseDto authenticate(
       AuthenticationRequestDto authenticationRequestDto, HttpServletResponse response) {
-    User user = userRepository.findUserByUsername(authenticationRequestDto.getUsername());
 
-    if (user == null) {
-      log.info("User not found");
-      throw new UserNotFoundException("User not found");
-    }
+    try {
+      Authentication authentication =
+          authenticationManager.authenticate(
+              new UsernamePasswordAuthenticationToken(
+                  authenticationRequestDto.getUsername(), authenticationRequestDto.getPassword()));
 
-    if (!passwordEncoder.matches(authenticationRequestDto.getPassword(), user.getPasswordHash())) {
+      UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+      String accessToken = jwtUtility.generateAccessToken(userDetails);
+      String refreshToken = jwtUtility.generateRefreshToken(userDetails);
+
+      ResponseCookie accessTokenCookie = cookieUtility.createAccessTokenCookie(accessToken);
+      ResponseCookie refreshTokenCookie = cookieUtility.createRefreshTokenCookie(refreshToken);
+
+      response.addHeader(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
+      response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
+
+      log.info("Login was successful");
+
+      return AuthenticationResponseDto.builder().message("Login was successful").build();
+    } catch (BadCredentialsException e) {
       log.info("Incorrect credentials");
-      throw new IncorrectCredentialsException(
+      throw new BadCredentialsException(
           "Incorrect credentials, are you sure you have the correct username and password?");
     }
-
-    UsernamePasswordAuthenticationToken token =
-        new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPasswordHash());
-    authenticationManager.authenticate(token);
-
-    String accessToken = jwtUtility.generateAccessToken(user);
-    String refreshToken = jwtUtility.generateRefreshToken(user);
-
-    ResponseCookie accessTokenCookie = cookieUtility.createAccessTokenCookie(accessToken);
-    ResponseCookie refreshTokenCookie = cookieUtility.createRefreshTokenCookie(refreshToken);
-
-    response.addHeader(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
-    response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
-
-    log.info("Login was successful");
-    return AuthenticationResponseDto.builder().message("Login was successful").build();
   }
 
   @Override
@@ -106,7 +108,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     String username = jwtUtility.extractUsername(refreshToken);
-    User user = userRepository.findUserByUsername(username);
+    User user =
+        userRepository
+            .findUserByUsername(username)
+            .orElseThrow(() -> new UserNotFoundException("User was not found"));
 
     if (username == null
         || !userRepository.existsByUsername(username)

@@ -4,6 +4,7 @@ import com.example.pfkworkspace.service.impl.UserDetailsServiceImpl;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,13 +28,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(
-      HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+      HttpServletRequest request,
+      @Nonnull HttpServletResponse response,
+      @Nonnull FilterChain filterChain)
       throws ServletException, IOException {
 
     log.info("JWT FILTER TRIGGERED for URI: {}", request.getRequestURI());
 
     String token = resolveToken(request);
-
+    log.info("Resolved token: {}", token);
     if (token == null) {
       filterChain.doFilter(request, response);
       return;
@@ -67,10 +70,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   private String resolveToken(HttpServletRequest request) {
-    if (request.getCookies() == null) return null;
+    Cookie[] cookies = request.getCookies();
+    if (cookies == null) return null;
 
-    for (var cookie : request.getCookies()) {
-      if (cookie.getName().equals("refreshToken")) {
+    for (Cookie cookie : cookies) {
+      if (cookie.getName().equals("accessToken")) {
         return cookie.getValue();
       }
     }

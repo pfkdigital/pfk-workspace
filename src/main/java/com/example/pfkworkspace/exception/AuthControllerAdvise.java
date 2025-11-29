@@ -3,6 +3,7 @@ package com.example.pfkworkspace.exception;
 import com.example.pfkworkspace.dto.response.ApiError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,11 +13,22 @@ import java.time.LocalDateTime;
 @ControllerAdvice
 public class AuthControllerAdvise {
 
-  @ExceptionHandler(UsernameAlreadyExistsException.class)
-  public ResponseEntity<ApiError> handleUsernameAlreadyExistsException() {
+  @ExceptionHandler({AuthenticationException.class})
+  public ResponseEntity<ApiError> handleAuthenticationException(Exception e) {
     ApiError apiError =
         ApiError.builder()
-            .message("Username already exists")
+            .message(e.getMessage())
+            .status(HttpStatus.UNAUTHORIZED)
+            .timestamp(LocalDateTime.now())
+            .build();
+    return new ResponseEntity<>(apiError, HttpStatus.UNAUTHORIZED);
+  }
+
+  @ExceptionHandler(UsernameAlreadyExistsException.class)
+  public ResponseEntity<ApiError> handleUsernameAlreadyExistsException(Exception e) {
+    ApiError apiError =
+        ApiError.builder()
+            .message(e.getMessage())
             .status(HttpStatus.CONFLICT)
             .timestamp(LocalDateTime.now())
             .build();
@@ -25,10 +37,10 @@ public class AuthControllerAdvise {
   }
 
   @ExceptionHandler(EmailAddressAlreadyExistsException.class)
-  public ResponseEntity<ApiError> handleEmailAddressAlreadyExistsException() {
+  public ResponseEntity<ApiError> handleEmailAddressAlreadyExistsException(Exception e) {
     ApiError apiError =
         ApiError.builder()
-            .message("Email address already exists")
+            .message(e.getMessage())
             .status(HttpStatus.CONFLICT)
             .timestamp(LocalDateTime.now())
             .build();
@@ -37,10 +49,10 @@ public class AuthControllerAdvise {
   }
 
   @ExceptionHandler(UserNotFoundException.class)
-  public ResponseEntity<ApiError> handleUserNotFoundException() {
+  public ResponseEntity<ApiError> handleUserNotFoundException(Exception e) {
     ApiError apiError =
         ApiError.builder()
-            .message("User not found")
+            .message(e.getMessage())
             .status(HttpStatus.NOT_FOUND)
             .timestamp(LocalDateTime.now())
             .build();
@@ -49,10 +61,10 @@ public class AuthControllerAdvise {
   }
 
   @ExceptionHandler(UsernameNotFoundException.class)
-  public ResponseEntity<ApiError> handleUsernameNotFoundException() {
+  public ResponseEntity<ApiError> handleUsernameNotFoundException(Exception e) {
     ApiError apiError =
         ApiError.builder()
-            .message("User not found")
+            .message(e.getMessage())
             .status(HttpStatus.NOT_FOUND)
             .timestamp(LocalDateTime.now())
             .build();
@@ -61,10 +73,10 @@ public class AuthControllerAdvise {
   }
 
   @ExceptionHandler(IncorrectCredentialsException.class)
-  public ResponseEntity<ApiError> handleIncorrectCredentialsException() {
+  public ResponseEntity<ApiError> handleIncorrectCredentialsException(Exception e) {
     ApiError apiError =
         ApiError.builder()
-            .message("Incorrect credentials")
+            .message(e.getMessage())
             .status(HttpStatus.UNAUTHORIZED)
             .timestamp(LocalDateTime.now())
             .build();
@@ -73,10 +85,10 @@ public class AuthControllerAdvise {
   }
 
   @ExceptionHandler(RefreshTokenMissingException.class)
-  public ResponseEntity<ApiError> handleRefreshTokenMissingException() {
+  public ResponseEntity<ApiError> handleRefreshTokenMissingException(Exception e) {
     ApiError apiError =
         ApiError.builder()
-            .message("Refresh token is missing")
+            .message(e.getMessage())
             .status(HttpStatus.UNAUTHORIZED)
             .timestamp(LocalDateTime.now())
             .build();
@@ -85,10 +97,10 @@ public class AuthControllerAdvise {
   }
 
   @ExceptionHandler(RefreshTokenIsNotValidException.class)
-  public ResponseEntity<ApiError> handleRefreshTokenIsNotValidException() {
+  public ResponseEntity<ApiError> handleRefreshTokenIsNotValidException(Exception e) {
     ApiError apiError =
         ApiError.builder()
-            .message("Refresh token is not valid")
+            .message(e.getMessage())
             .status(HttpStatus.UNAUTHORIZED)
             .timestamp(LocalDateTime.now())
             .build();

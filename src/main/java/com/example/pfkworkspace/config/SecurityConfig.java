@@ -4,6 +4,8 @@ import com.example.pfkworkspace.security.JwtAuthenticationFilter;
 import com.example.pfkworkspace.service.impl.UserDetailsServiceImpl;
 import com.example.pfkworkspace.utility.CookieUtility;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -33,6 +36,9 @@ public class SecurityConfig {
   private final UserDetailsService userDetailsService;
   private final PasswordEncoder passwordEncoder;
 
+  @Qualifier("delegatedAuthenticationEntryPoint")
+  private final AuthenticationEntryPoint authenticationEntryPoint;
+
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
     return httpSecurity
@@ -46,10 +52,11 @@ public class SecurityConfig {
                 sessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .authenticationProvider(authenticationProvider())
-        .exceptionHandling(
-            exceptionHandlingConfigurer ->
-                exceptionHandlingConfigurer.authenticationEntryPoint(
-                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+        .oauth2Login(
+            oauthLogin ->
+                oauthLogin.userInfoEndpoint(
+                    userInfoEndpointConfig ->
+                        userInfoEndpointConfig.userService(userDetailsService)))
         .logout(
             logoutConfigurer ->
                 logoutConfigurer
@@ -60,6 +67,7 @@ public class SecurityConfig {
                           cookieUtility.clearCookies(httpServletRequest.getCookies());
                           httpServletResponse.setStatus(HttpStatus.OK.value());
                         }))
+        .exceptionHandling(handler -> handler.authenticationEntryPoint(authenticationEntryPoint))
         .build();
   }
 

@@ -1,5 +1,6 @@
 package com.example.pfkworkspace.entity;
 
+import com.example.pfkworkspace.enums.AuthProvider;
 import com.example.pfkworkspace.enums.Roles;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,12 +36,16 @@ public class User extends BaseEntity implements UserDetails {
   @Column(nullable = false, unique = true, name = "username")
   private String username;
 
-  @Column(nullable = false, name = "password")
+  @Column(name = "password")
   private String password;
 
   @Column(nullable = false, name = "role")
   @Enumerated(EnumType.STRING)
   private Roles role;
+
+  @Column(name = "auth_provider")
+  @Enumerated(value = EnumType.STRING)
+  private AuthProvider authProvider;
 
   @Column(nullable = false, name = "is_enabled")
   private boolean isEnabled;

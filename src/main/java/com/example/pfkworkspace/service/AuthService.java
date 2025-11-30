@@ -3,6 +3,7 @@ package com.example.pfkworkspace.service;
 import com.example.pfkworkspace.dto.request.AuthenticationRequestDto;
 import com.example.pfkworkspace.dto.request.RegisterRequestDto;
 import com.example.pfkworkspace.dto.response.AuthenticationResponseDto;
+import com.example.pfkworkspace.dto.response.LogoutResponse;
 import com.example.pfkworkspace.dto.response.RefreshResponseDto;
 import com.example.pfkworkspace.dto.response.RegistrationResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,4 +16,6 @@ public interface AuthService {
       AuthenticationRequestDto authenticationRequestDto, HttpServletResponse response);
 
   RefreshResponseDto refresh(HttpServletRequest request, HttpServletResponse response);
+
+  LogoutResponse logout(HttpServletRequest request, HttpServletResponse response);
 }

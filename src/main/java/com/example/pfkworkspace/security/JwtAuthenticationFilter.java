@@ -28,12 +28,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(
-      HttpServletRequest request,
+      @Nonnull HttpServletRequest request,
       @Nonnull HttpServletResponse response,
       @Nonnull FilterChain filterChain)
       throws ServletException, IOException {
-
-    log.info("JWT FILTER TRIGGERED for URI: {}", request.getRequestURI());
 
     String token = resolveToken(request);
     log.info("Resolved token: {}", token);
@@ -74,7 +72,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (cookies == null) return null;
 
     for (Cookie cookie : cookies) {
-      if (cookie.getName().equals("accessToken")) {
+      if (cookie.getName().equals("access_token")) {
         return cookie.getValue();
       }
     }

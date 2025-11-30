@@ -10,18 +10,19 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 
+import java.util.List;
+
 @Configuration
 public class BeanConfig {
 
   @Bean
   public CorsConfiguration corsConfiguration() {
-    CorsConfiguration corsConfiguration = new CorsConfiguration();
-    corsConfiguration.addAllowedOriginPattern("*");
-    corsConfiguration.addAllowedHeader("*");
-    corsConfiguration.addAllowedMethod("*");
-    corsConfiguration.addAllowedOrigin("http://localhost:3000");
-    corsConfiguration.setAllowCredentials(true);
-    return corsConfiguration;
+    CorsConfiguration config = new CorsConfiguration();
+      config.setAllowedOrigins(List.of("http://localhost:3000"));
+      config.setAllowCredentials(true);
+      config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+      config.setAllowedHeaders(List.of("*"));
+    return config;
   }
 
   @Bean

@@ -3,6 +3,7 @@ package com.example.pfkworkspace.controller;
 import com.example.pfkworkspace.dto.request.AuthenticationRequestDto;
 import com.example.pfkworkspace.dto.request.RegisterRequestDto;
 import com.example.pfkworkspace.service.impl.AuthServiceImpl;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,5 +29,15 @@ public class AuthController {
       HttpServletResponse response) {
     return new ResponseEntity<>(
         authService.authenticate(authenticationRequestDto, response), HttpStatus.OK);
+  }
+
+  @PostMapping("/refresh")
+  public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
+    return new ResponseEntity<>(authService.refresh(request, response), HttpStatus.OK);
+  }
+
+  @PostMapping("/logout")
+  public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+    return new ResponseEntity<>(authService.logout(request, response), HttpStatus.OK);
   }
 }

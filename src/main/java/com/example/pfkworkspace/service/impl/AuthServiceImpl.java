@@ -3,6 +3,7 @@ package com.example.pfkworkspace.service.impl;
 import com.example.pfkworkspace.dto.request.AuthenticationRequestDto;
 import com.example.pfkworkspace.dto.request.RegisterRequestDto;
 import com.example.pfkworkspace.dto.response.AuthenticationResponseDto;
+import com.example.pfkworkspace.dto.response.LogoutResponse;
 import com.example.pfkworkspace.dto.response.RefreshResponseDto;
 import com.example.pfkworkspace.dto.response.RegistrationResponseDto;
 import com.example.pfkworkspace.entity.User;
@@ -23,6 +24,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -57,7 +59,7 @@ public class AuthServiceImpl implements AuthService {
             .username(registerRequestDto.getUsername())
             .password(passwordEncoder.encode(registerRequestDto.getPassword()))
             .emailAddress(registerRequestDto.getEmailAddress())
-            .role(Roles.ROLE_ADMIN)
+            .role(Roles.ROLE_USER)
             .authProvider(AuthProvider.LOCAL)
             .isEnabled(true)
             .build();
@@ -102,7 +104,7 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public RefreshResponseDto refresh(HttpServletRequest request, HttpServletResponse response) {
-    String refreshToken = request.getHeader("refreshToken");
+    String refreshToken = request.getHeader("refresh_token");
     if (refreshToken == null) {
       log.info("Refresh token is missing");
       throw new RefreshTokenMissingException("Refresh token is missing");
@@ -128,4 +130,11 @@ public class AuthServiceImpl implements AuthService {
 
     return RefreshResponseDto.builder().message("Refresh was successful").build();
   }
+
+    @Override
+    public LogoutResponse logout(HttpServletRequest request, HttpServletResponse response) {
+        cookieUtility.clearCookies(request, response);
+        SecurityContextHolder.clearContext();
+        return LogoutResponse.builder().message("Logout was successful").build();
+    }
 }

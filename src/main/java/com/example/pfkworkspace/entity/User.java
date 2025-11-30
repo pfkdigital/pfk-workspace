@@ -24,10 +24,10 @@ public class User extends BaseEntity implements UserDetails {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;
 
-  @Column(name = "first_name")
+  @Column(name = "first_name", nullable = true)
   private String firstName;
 
-  @Column(name = "last_name")
+  @Column(name = "last_name", nullable = true)
   private String lastName;
 
   @Column(unique = true, nullable = false, name = "email_address")
@@ -36,7 +36,7 @@ public class User extends BaseEntity implements UserDetails {
   @Column(nullable = false, unique = true, name = "username")
   private String username;
 
-  @Column(name = "password")
+  @Column(name = "password", nullable = true)
   private String password;
 
   @Column(nullable = false, name = "role")
@@ -46,6 +46,9 @@ public class User extends BaseEntity implements UserDetails {
   @Column(name = "auth_provider")
   @Enumerated(value = EnumType.STRING)
   private AuthProvider authProvider;
+
+  @Column(name = "provider_id")
+  private String providerId;
 
   @Column(nullable = false, name = "is_enabled")
   private boolean isEnabled;
